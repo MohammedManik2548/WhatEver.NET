@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WhatEver.Api.Controllers;
@@ -6,34 +7,67 @@ namespace WhatEver.Api.Controllers;
 [ApiController]
 public class MyController : ControllerBase
 {
+
+
     [HttpGet]
-    public string Get()
+    public IActionResult GetAll()
     {
-        return "Hello World";
+        return Ok(DemoService.Demos);
     }
     
-    [HttpGet("universe")]
-    public string SayHello()
+    [HttpGet("{id:int}")]
+    public IActionResult GetSingle(int id)
     {
-        return "Hello Universe";
+        var demo = DemoService.Demos.FirstOrDefault(d=>d.Id==id);
+        if (demo == null)
+        {
+            return NotFound();
+        }
+        return Ok(demo);
     }
 
     [HttpPost]
-    public string SayHelloTo(Demo demo)
+    public IActionResult Post(Demo demo)
     {
-        return $"Hello {demo.Name}";
+        var id = DemoService.Demos.Count + 1;
+        demo.Id = id;
+        DemoService.Demos.Add(demo);
+    
+        return CreatedAtAction("GetSingle",new {id=id},demo);
+        
     }
 
-    [HttpPut]
-    public string SayHelloPut(Demo demo)
+    [HttpPut("{id:int}")]
+    public IActionResult Put(int id,Demo demo)
     {
-        return $"Hello {demo.Name}";
+        var demoFromDb = DemoService.Demos.FirstOrDefault(d => d.Id == id);
+        if (demoFromDb == null)
+        {
+            return NotFound();
+        }
+
+        var index = DemoService.Demos.IndexOf(demoFromDb);
+        Console.WriteLine(index);
+        demoFromDb.Id = demo.Id;
+        demoFromDb.Name = demo.Name;
+        DemoService.Demos.RemoveAt(index);
+        DemoService.Demos.Insert(index,demoFromDb);
+
+        return NoContent();
     }
 
     [HttpDelete("{id:int}")]
-    public string SayHelloDel(int id)
+    public IActionResult Delete(int id)
     {
-        return $"{id}";
+        var demo = DemoService.Demos.FirstOrDefault(d=>d.Id==id);
+        if (demo == null)
+        {
+            return NotFound();
+        }
+
+        DemoService.Demos.Remove(demo);
+
+        return NoContent();
     }
     
 
@@ -41,5 +75,15 @@ public class MyController : ControllerBase
 
 public class Demo
 {
+    public int Id { get; set; }
     public string Name { get; set; }
+}
+
+public static class DemoService
+{
+    public static IList<Demo> Demos = new List<Demo>
+    {
+        new Demo{Id = 1,Name = "Manik"},
+        new Demo{Id = 2,Name = "Shakil"},
+    };
 }
